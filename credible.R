@@ -22,19 +22,19 @@ r_hat   <- mean(log_exc)
 tau_N <- to + N * t
 mu_N  <- (to * m0 + t * N * r_hat) / tau_N
 
-# Predictive Distribution Calculation
+# Predictive Distribution Calculation (only need the sd)
 pred_sd <- sqrt(1/t + 1/tau_N)
 
 # Monte Carlo Simulation antithetic
 r_half <- rnorm(J / 2, mean = mu_N, sd = pred_sd) 
-r_anti <- 2 * mu_N - r_half
+r_anti <- 2 * mu_N - r_half # Antithetic
 r_pred <- c(r_half, r_anti)
 
 
-# --- 2. Plotting Setup ---
+# 2 Plotting Setup 
 
 # Grid of weights to test
-w_grid <- seq(0, 1, length.out = 100) # i will try tomorrow to find the integral
+w_grid <- seq(0, 1, length.out = 100) # i will try tomorrow to find the integral not grids
 
 # Gamma values to loop through
 gammas <- c(2, 4, 6, 8)
@@ -45,7 +45,7 @@ par(mfrow = c(2, 2))
 # For each Gamma find the maxCER and plot
 
 for (g in gammas) {
-  cer_values <- numeric(100)
+  cer_values <- numeric(100) # initialize an empty numeric vector for the next gamma
   
   for (i in 1:100) {
     w <- w_grid[i]
