@@ -45,9 +45,9 @@ Where:
 
 The analysis calculates the optimal weights for different levels of risk aversion ($\gamma \in \{2, 4, 6, 8\}$).
 
-*(Note: Place your generated plot image in a folder named `plots` and verify the path below)*
 
-![Optimization Plots](plots/optimization_grid.png)
+
+![Optimization Plots](Plots.png)
 
 ### Observations
 * **Inverse Relationship:** As risk aversion ($\gamma$) increases, the optimal allocation to SPY ($w^*$) decreases significantly.
