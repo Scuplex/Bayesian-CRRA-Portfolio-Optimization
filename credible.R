@@ -1,53 +1,98 @@
-# Bayes Beta estimator
+library(quantmod)
 
-T <- 60       # number of periods
-theta <- 0.7      # true probability of success
-ST <- 38
+# --- 1. Data & Bayesian Setup ---
+# Parameters from the text
+rf <- 1.002           # Risk-free gross return (Corrected from 1.0002)
+N  <- 60              # Sample size (observations)
+t  <- 342.63          # Likelihood precision
+T0 <- 12              # Prior strength
+m0 <- 0.00328         # Prior mean
+to <- T0 * t          # Prior precision
+J  <- 1e6             # Monte Carlo simulations
 
-a0 <- 0.5
-b0 <- 0.5
-aT <- a0 + ST
-bT <- b0 + T - ST
+# Get SPY data
+getSymbols("SPY", from = "2018-01-01", to = "2022-12-31", periodicity = "monthly")
+SPY_adj <- Ad(SPY)
+R_t     <- SPY_adj / lag(SPY_adj)
+R_t     <- R_t[-1] # Remove NA
+log_exc <- log(R_t) - log(rf)
+r_hat   <- mean(log_exc)
 
-posterior_mean  <- aT / (aT + bT) # Find the posterior_mean
+# Posterior Distribution Calculation
+tau_N <- to + N * t
+mu_N  <- (to * m0 + t * N * r_hat) / tau_N
 
-x <- seq(0,1,length.out=400)
-prior_density <- dbeta(x, a0, b0)
-post_density  <- dbeta(x, aT, bT)
+# Predictive Distribution Calculation
+# The variance of the predictive distribution is sigma^2 + sigma_posterior^2
+# Which is 1/t + 1/tau_N
+pred_sd <- sqrt(1/t + 1/tau_N)
 
-#  equal-tailed  90% credible interval
-ci_lower <- qbeta(0.05, aT, bT)  # 0.05 comes from (1 - 0.90) / 2
-ci_upper <- qbeta(0.95, aT, bT)  # 0.95 comes from 1 - 0.05
+# Monte Carlo Simulation
+set.seed(123)
+r_pred <- rnorm(J, mean = mu_N, sd = pred_sd)
 
-# the 90% CI centered at the posterior mode
+# --- 2. Plotting Setup ---
 
+# Grid of weights to test
+w_grid <- seq(0, 1, length.out = 100)
+# Gamma values to loop through
+gammas <- c(2, 4, 6, 8)
 
+# Set up the plotting area: 2 rows, 2 columns
+par(mfrow = c(2, 2)) 
+# Adjust margins slightly to make room for titles/labels
+par(mar = c(4, 4.5, 3, 1))
 
-# Start the plot
-plot(x, post_density,
-     type = "l",
-     col = "blue",
-     lwd = 3,
-     main = "Posterior vs Prior (BETA)",
-     xlab = "(Probability of Success)",
-     ylab = "Probability Density Function")
+# --- 3. Loop and Plot (Base R) ---
 
-# Add the Prior Density
-lines(x, prior_density, col = "black", lty = 2, lwd = 2)
-abline(v = ci_lower, col = "purple", lty = 2)
-abline(v = ci_upper, col = "purple", lty = 2)
+for (g in gammas) {
+  
+  # A. Calculate CER for this Gamma
+  cer_values <- numeric(length(w_grid))
+  
+  for (i in 1:length(w_grid)) {
+    w <- w_grid[i]
+    
+    # Portfolio gross return component: (w * e^r + (1-w))
+    port_term <- w * exp(r_pred) + (1 - w)
+    
+    # Expected Utility: E[port_term^(1-gamma)]
+    eu <- mean(port_term^(1 - g))
+    
+    # Certainty Equivalent Return (Gross)
+    # CER = Rf * (EU)^(1/(1-gamma))
+    cer_gross <- rf * (eu)^(1 / (1 - g))
+    
+    # Convert to Net Percentage for the plot: (Gross - 1) * 100
+    cer_values[i] <- (cer_gross - 1) * 100
+  }
+  
+  # B. Find Optimal Weight
+  opt_idx <- which.max(cer_values)
+  opt_w   <- w_grid[opt_idx]
+  opt_val <- cer_values[opt_idx]
+  
+  # C. Base R Plotting
+  plot(w_grid, cer_values,
+       type = "l",             # Line plot
+       col  = "red",           # Red color
+       lwd  = 2,               # Line width
+       lty  = 2,               # Dashed line style
+       xlab = "Portfolio weight w",
+       ylab = "CER(w) (in net percentage)",
+       main = "",              # We will add a custom title below
+       ylim = c(min(cer_values) - 0.05, max(cer_values) + 0.05)) # Add some breathing room
+  
+  # Add the black dot at the maximum
+  points(opt_w, opt_val, pch = 19, col = "black", cex = 1.2)
+  
+  # Add the Title with Greek letters
+  # bquote allows us to mix variables (.(g)) with math symbols
+  title(main = bquote(gamma == .(g) ~ ", optimal weight " ~ w^"*" == .(sprintf("%.2f", opt_w))))
+  
+  # Add a grid (optional, but matches the style of many academic plots)
+  grid()
+}
 
-# Top left Banner
-legend("topleft",
-       legend = c(
-         paste("Prior: Beta(", a0, ", ", b0, ")", sep = ""),
-         paste("Posterior: Beta(", aT, ", ", bT, ")", sep = ""),
-         paste("90% CI: [", round(ci_lower, 3), ", ", round(ci_upper, 3), "]", sep="")
-       ),
-       col = c("black", "blue", "purple"),
-       lty = c(2, 1, 2),
-       lwd = c(2, 3, 1),
-       cex = 0.8
-)
-
-
+# Reset plotting parameters to default
+par(mfrow = c(1, 1))
