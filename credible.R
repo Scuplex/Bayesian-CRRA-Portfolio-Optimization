@@ -2,13 +2,13 @@ library(quantmod)
 
 # --- 1. Data & Bayesian Setup ---
 # Parameters from the text
-rf <- 1.002           # Risk-free gross return (Corrected from 1.0002)
+rf <- 1.002           # Risk-free gross return
 N  <- 60              # Sample size (observations)
 t  <- 342.63          # Likelihood precision
 T0 <- 12              # Prior strength
 m0 <- 0.00328         # Prior mean
 to <- T0 * t          # Prior precision
-J  <- 1e6             # Monte Carlo simulations
+J  <- 100000            # Monte Carlo simulations
 
 # Get SPY data
 getSymbols("SPY", from = "2018-01-01", to = "2022-12-31", periodicity = "monthly")
@@ -23,13 +23,13 @@ tau_N <- to + N * t
 mu_N  <- (to * m0 + t * N * r_hat) / tau_N
 
 # Predictive Distribution Calculation
-# The variance of the predictive distribution is sigma^2 + sigma_posterior^2
-# Which is 1/t + 1/tau_N
 pred_sd <- sqrt(1/t + 1/tau_N)
 
 # Monte Carlo Simulation
-set.seed(123)
-r_pred <- rnorm(J, mean = mu_N, sd = pred_sd)
+r_half <- rnorm(J / 2, mean = mu_N, sd = pred_sd) 
+r_anti <- 2 * mu_N - r_half
+r_pred <- c(r_half, r_anti)
+
 
 # --- 2. Plotting Setup ---
 

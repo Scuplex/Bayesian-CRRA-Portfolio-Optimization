@@ -1,5 +1,3 @@
-# Bayesian Portfolio Optimization with CRRA Utility 📈
-
 A Bayesian approach to portfolio choice, optimizing allocation between a risk-free asset and the S&P 500 (SPY) for an investor with Constant Relative Risk Aversion (CRRA) preferences.
 
 ## 📖 Overview
@@ -41,11 +39,28 @@ Where:
 
 ---
 
+## ⚡ Simulation Technique: Antithetic Variates
+
+To improve the precision of the Monte Carlo simulation without increasing computational cost, this project employs the **Antithetic Variates** method.
+
+### Why use it?
+Standard "Crude" Monte Carlo simulations rely on purely random sampling, which can introduce significant variance (noise) unless $J$ is extremely large. Antithetic Variates introduces a negative correlation between samples, which reduces the variance of the estimator, resulting in smoother optimization curves.
+
+### How it works
+Instead of generating $J$ independent draws, we generate $J/2$ draws ($r_{half}$) and create their symmetric opposites reflected across the predictive mean ($\mu_N$).
+
+The reflection formula used is derived from the symmetry of the Normal distribution:
+$$r_{anti} = 2\mu_N - r_{half}$$
+
+1. We draw a sample $r$.
+2. We calculate its "mirror image" relative to the mean. If $r$ is a specific distance *above* the mean, $r_{anti}$ is that exact distance *below* the mean.
+3. This ensures the sample mean of our simulation is exactly equal to the theoretical mean $\mu_N$, eliminating a major source of sampling error.
+
+---
+
 ## 🖼️ Results
 
 The analysis calculates the optimal weights for different levels of risk aversion ($\gamma \in \{2, 4, 6, 8\}$).
-
-
 
 ![Optimization Plots](Plots.png)
 
