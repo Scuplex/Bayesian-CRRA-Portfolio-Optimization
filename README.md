@@ -1,3 +1,8 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 A Bayesian approach to portfolio choice, optimizing allocation between a risk-free asset and the S&P 500 (SPY) for an investor with Constant Relative Risk Aversion (CRRA) preferences.
 
 ## 📖 Overview
