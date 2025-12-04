@@ -11,7 +11,7 @@ to <- T0 * t          # Prior precision
 J  <- 100000          # Monte Carlo simulations
 
 # Get SPY data
-getSymbols("SPY", from = "2018-01-01", to = "2022-12-31", periodicity = "monthly")
+getSymbols("SPY", from = "2017-12-01", to = "2022-12-31", periodicity = "monthly")
 SPY_adj <- Ad(SPY)
 R_t     <- SPY_adj / lag(SPY_adj)
 R_t     <- R_t[-1] # Remove NA
